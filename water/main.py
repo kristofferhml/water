@@ -1,4 +1,5 @@
 import rclpy
+import os
 from . import pump
 from . import utils
 from rclpy.node import Node
@@ -6,14 +7,15 @@ from std_msgs.msg import String
 
 DAY = 'day'
 NIGHT = 'night'
-
-MIN_INTERVAL = 10
+PIN = int(os.getenv('PIN',15))
+MIN_INTERVAL = int(os.getenv('MIN_INTERVAL',10))
 
 class Water(Node):
 
     def __init__(self):
         super().__init__('water')
-        self.pump = pump.Pump()
+        self.get_logger().info('Startig water with on pin "%d" and min interval of "%d"' % (PIN, MIN_INTERVAL))
+        self.pump = pump.Pump(PIN)
         self.subscription = self.create_subscription(
             String,
             'day',
