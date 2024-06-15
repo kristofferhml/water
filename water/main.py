@@ -36,6 +36,7 @@ class Water(Node):
 
         elif msg.data == DAY:
             self.pump.flow()
+            self.last_run = datetime.now()
             self.get_logger().info('Staring pump')
         
     def is_active_periode(self):
