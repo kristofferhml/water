@@ -30,34 +30,38 @@ class Water(Node):
 
         self.get_logger().info('Getting: "%s"' % msg.data)
         
-        if msg.data == NIGHT or not self.is_active_periode():
+        if msg.data == NIGHT:
+            self.get_logger().info('Night, stopping pump.')
             self.pump.stop()
-            self.get_logger().info('Stopping pump')
-
+            
         elif msg.data == DAY:
-            self.pump.flow()
-            self.last_run = datetime.now()
-            self.get_logger().info('Staring pump')
-        
-    def is_active_periode(self):
+
+            minutes_since_last_run = self.get_minutes_since_last_run()
+
+            if minutes_since_last_run < MIN_INTERVAL:
+                self.get_logger().info('Starting pump, minutes since last run within interval: %d' % minutes_since_last_run)
+                self.last_run = datetime.now()
+                self.pump.flow()
+            else:
+                self.get_logger().info('Stopping pump, minutes since last run within interval: %d' % minutes_since_last_run)
+                self.pump.stop()
+            
+            
+    def get_minutes_since_last_run(self):
 
         try:
             last_run_difference = datetime.now() - self.last_run
             minutes = last_run_difference.total_seconds() / 60  
             self.get_logger().info('Minutes since last run: "%d"' % minutes)
-            if minutes < WATER_MIN_MINUTE_DIFF:
-                self.get_logger().info('No water - too close to last run')
-                return False
-        
+            return minutes
+            
         except AttributeError:
             self.get_logger().info('Inital run. Setting last_run')
             self.last_run = datetime.now()
         
-        nanoseconds = self.get_clock().now().nanoseconds
-        minute_of_day = utils.nanoseconds_to_minutes(nanoseconds)
-        
-        return minute_of_day < MIN_INTERVAL
-  
+        return 0
+    
+
 def main(args=None):
     rclpy.init(args=args)
 
