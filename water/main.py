@@ -40,13 +40,15 @@ class Water(Node):
 
             if minutes_since_last_run < MIN_INTERVAL:
                 self.get_logger().info('Starting pump, minutes since last run within interval: %d' % minutes_since_last_run)
-                self.last_run = datetime.now()
                 self.pump.flow()
-            else:
+            else: 
                 self.get_logger().info('Stopping pump, minutes since last run within interval: %d' % minutes_since_last_run)
                 self.pump.stop()
             
-            
+            if (minutes_since_last_run > WATER_MIN_MINUTE_DIFF):
+                self.get_logger().info('Diff interval reached. Setting last run: %d' % minutes_since_last_run)
+                self.last_run = datetime.now()
+
     def get_minutes_since_last_run(self):
 
         try:
