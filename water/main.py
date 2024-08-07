@@ -12,6 +12,7 @@ NIGHT = 'night'
 PIN = int(os.getenv('PIN',15))
 MIN_INTERVAL = int(os.getenv('MIN_INTERVAL',10))
 WATER_MIN_MINUTE_DIFF = int(os.getenv('WATER_MIN_MINUTE_DIFF', 3))
+WATER_MIN_MINUTE_DIFF_NIGHT = int(os.getenv('WATER_MIN_MINUTE_DIFF_NIGHT',3))
 
 class Water(Node):
 
@@ -29,25 +30,21 @@ class Water(Node):
     def listener_callback(self, msg):
 
         self.get_logger().info('Getting: "%s"' % msg.data)
-        
-        if msg.data == NIGHT:
-            self.get_logger().info('Night, stopping pump.')
+
+        min_diff = WATER_MIN_MINUTE_DIFF if msg.data == DAY else WATER_MIN_MINUTE_DIFF_NIGHT
+
+        minutes_since_last_run = self.get_minutes_since_last_run()
+
+        if minutes_since_last_run < MIN_INTERVAL:
+            self.get_logger().info('Starting pump, minutes since last run within interval: %d' % minutes_since_last_run)
+            self.pump.flow()
+        else: 
+            self.get_logger().info('Stopping pump, minutes since last run within interval: %d' % minutes_since_last_run)
             self.pump.stop()
-            
-        elif msg.data == DAY:
-
-            minutes_since_last_run = self.get_minutes_since_last_run()
-
-            if minutes_since_last_run < MIN_INTERVAL:
-                self.get_logger().info('Starting pump, minutes since last run within interval: %d' % minutes_since_last_run)
-                self.pump.flow()
-            else: 
-                self.get_logger().info('Stopping pump, minutes since last run within interval: %d' % minutes_since_last_run)
-                self.pump.stop()
-            
-            if (minutes_since_last_run > WATER_MIN_MINUTE_DIFF):
-                self.get_logger().info('Diff interval reached. Setting last run: %d' % minutes_since_last_run)
-                self.last_run = datetime.now()
+        
+        if (minutes_since_last_run > min_diff):
+            self.get_logger().info('Diff interval reached. Setting last run: %d' % minutes_since_last_run)
+            self.last_run = datetime.now()
 
     def get_minutes_since_last_run(self):
 
